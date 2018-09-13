@@ -1,13 +1,15 @@
 import numpy as np
+from scipy import signal
 import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 from scipy.io import wavfile
 
 # prepare initial variables
-soundFilePath = "src/sample.wav"
+soundFilePath = "src/female.wav"
 sampleFs, voiceSample = wavfile.read(soundFilePath)
+voiceSample = voiceSample[:180000]
 absorptionFactor = 0.1
-fs = 48000
+fs = 44100
 micsPositions = [[3.0], [1.0], [1.5]]
 
 # prepare a room
@@ -21,30 +23,44 @@ soundSource = pra.soundsource.SoundSource([3, 6, 1.8], signal=voiceSample)
 room.add_source(soundSource.position, signal=soundSource.signal)
 
 # add microphones
-array = np.array([[3.0], [1.0], [1.5]])
+array = np.array([[2.96, 3.04], [1.0, 1.0], [1.5, 1.5]])
 micArray = pra.MicrophoneArray(array, room.fs)
 room.add_microphone_array(micArray)
 
-room.mic_array.record(voiceSample, sampleFs)
+    # record signals
+sig = [voiceSample, voiceSample]     # must have valid format after .shape
+room.mic_array.record(np.asanyarray(sig), sampleFs)
+
+# source signal convolution
+room.compute_rir()
+mic1TimeSignal = np.convolve(voiceSample, room.rir[0][0])
+mic2TimeSignal = np.convolve(voiceSample, room.rir[1][0])
+
+# STFT
+f1, t1, stftSignal1 = signal.stft(mic1TimeSignal, fs=sampleFs, nperseg=2048)
+f2, t2, stftSignal2 = signal.stft(mic2TimeSignal, fs=sampleFs, nperseg=2048)
 
 # DOA
 # stftTransfromer = pra.transform.stft.STFT(2048, 1)
-# doa = pra.doa.SRP(array, room.fs, 2048)
-# doa.locate_sources()
+threeDimSig1 = stftSignal1[np.newaxis, :]
+threeDimSig2 = stftSignal2[np.newaxis, :]
+print(np.shape(np.vstack([threeDimSig1, threeDimSig2])))
 
+doaModule = pra.doa.SRP(array, room.fs, 2048)
+doaModule.locate_sources(np.vstack([threeDimSig1, threeDimSig2]), num_src=1)
+doaModule.polar_plt_dirac()
+print(doaModule.src_idx)
+
+plt.pcolormesh(t1, f1, np.abs(stftSignal1))
+# plt.specgram(mic1TimeSignal, Fs=sampleFs)
 
 # training things
-# bf = pra.Beamformer(micsPositions, sampleFs)
-#rirArr = pra.soundsource.build_rir_matrix(room.mic_array, room.sources, 8, room.fs)
-# rirSource = room.sources[0].get_rir(room.mic_array, 1, room.fs)
-
 
 # end of training things
 
 # room.image_source_model()
 room.plot(img_order=1, aspect='equal')
 
-room.simulate()
 # room.plot_rir()
 plt.show()
 
