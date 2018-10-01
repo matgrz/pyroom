@@ -4,32 +4,31 @@ import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 from scipy.io import wavfile
 
+import DoaModuleWrapper as doaWrapper
+import RoomBuilder as roomBuild
+
+# == data to plot ==
+plotRir          = 1
+plotRoom         = 1
+plotSpectrogram1 = 1
+plotSpectrogram2 = 1
+# ==================
+
 # prepare initial variables
 soundFilePath = "src/female.wav"
 sampleFs, voiceSample = wavfile.read(soundFilePath)
 voiceSample = voiceSample[:180000]
 absorptionFactor = 0.1
 fs = 44100
-micsPositions = [[3.0], [1.0], [1.5]]
+# end of init variables
 
 # prepare a room
 floor = np.array([[0, 0, 6, 6],
                   [0, 8, 8, 0]])
-room = pra.Room.from_corners(floor, fs=fs, max_order=12, absorption=absorptionFactor)
-room.extrude(3.5, absorption=absorptionFactor)
+micLocation = np.array([[5.0, 5.0], [3.96, 4.04], [1.5, 1.5]])
 
-# add a source
-soundSource = pra.soundsource.SoundSource([3, 6, 1.8], signal=voiceSample)
-room.add_source(soundSource.position, signal=soundSource.signal)
-
-# add microphones
-array = np.array([[2.96, 3.04], [1.0, 1.0], [1.5, 1.5]])
-micArray = pra.MicrophoneArray(array, room.fs)
-room.add_microphone_array(micArray)
-
-    # record signals
-sig = [voiceSample, voiceSample]     # must have valid format after .shape
-room.mic_array.record(np.asanyarray(sig), sampleFs)
+room = roomBuild.RoomBuilder(floor, fs, absorptionFactor, height=3.5, sourcesArray=[1, 4, 1.8],
+                             filePath=soundFilePath, micLocationArray=micLocation).getRoom()
 
 # source signal convolution
 room.compute_rir()
@@ -41,26 +40,27 @@ f1, t1, stftSignal1 = signal.stft(mic1TimeSignal, fs=sampleFs, nperseg=2048)
 f2, t2, stftSignal2 = signal.stft(mic2TimeSignal, fs=sampleFs, nperseg=2048)
 
 # DOA
-# stftTransfromer = pra.transform.stft.STFT(2048, 1)
 threeDimSig1 = stftSignal1[np.newaxis, :]
 threeDimSig2 = stftSignal2[np.newaxis, :]
 print(np.shape(np.vstack([threeDimSig1, threeDimSig2])))
 
-doaModule = pra.doa.SRP(array, room.fs, 2048)
-doaModule.locate_sources(np.vstack([threeDimSig1, threeDimSig2]), num_src=1)
-doaModule.polar_plt_dirac()
-print(doaModule.src_idx)
+doaModule = doaWrapper.DoaModuleWrapper(micLocation, room.fs, 2048, option=doaWrapper.DoaModuleWrapper.DoaOption.SRP)
+doaModule.calculateDoaAndPlot(xNumpyArray=np.vstack([threeDimSig1, threeDimSig2]), sourceCount=1)
+print("Calculated angle = " + str(doaModule.getAngle()))
 
-plt.pcolormesh(t1, f1, np.abs(stftSignal1))
-# plt.specgram(mic1TimeSignal, Fs=sampleFs)
+if plotSpectrogram1:
+    plt.figure("Spectrogram1")
+    plt.pcolormesh(t1, f1, np.abs(stftSignal1))
 
-# training things
+if plotSpectrogram2:
+    plt.figure("Spectrogram2")
+    plt.specgram(mic1TimeSignal, Fs=sampleFs)
 
-# end of training things
+if plotRoom:
+    room.plot(img_order=1, aspect='equal')
 
-# room.image_source_model()
-room.plot(img_order=1, aspect='equal')
+if plotRir:
+    plt.figure("rir")
+    room.plot_rir()
 
-# room.plot_rir()
 plt.show()
-
