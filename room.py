@@ -8,7 +8,7 @@ import DoaModuleWrapper as doaWrapper
 import RoomBuilder as roomBuild
 
 # == data to plot ==
-masterPlot       = 0
+masterPlot       = 1
 plotRir          = 0
 plotRoom         = 1
 plotSpectrogram1 = 0
