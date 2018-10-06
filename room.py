@@ -4,76 +4,93 @@ import matplotlib.pyplot as plt
 import pyroomacoustics as pra
 from scipy.io import wavfile
 
-import DoaModuleWrapper as doaWrapper
-import RoomBuilder as roomBuild
+import doa_module_wrapper as doa_wrapper
+import room_builder as room_builder
+from utils import processing
 
 # == data to plot ==
-masterPlot       = 1
-plotRir          = 0
-plotRoom         = 1
-plotSpectrogram1 = 0
-plotSpectrogram2 = 0
+master_plot       = 0
+plot_rir          = 0
+plot_room         = 1
+plot_spectrogram1 = 0
+plot_spectrogram2 = 0
 # ==================
-def receiveAngles(micLocation):
+
+
+def receive_angles(mic_location, source1, source2=None):
     # prepare initial variables
-    soundFilePath = "src/female.wav"
-    sampleFs, voiceSample = wavfile.read(soundFilePath)
-    voiceSample = voiceSample[:180000]
-    absorptionFactor = 0.3
+    src_count = 1
+    sound_file_path_female = "src/female.wav"
+    sample_fs, voice_sample_female = wavfile.read(sound_file_path_female)
+    voice_sample_female = voice_sample_female[:180000]
+
+    sound_file_path_male = "src/male.wav"
+    sample_fs, voice_sample_male = wavfile.read(sound_file_path_male)
+    voice_sample_male = voice_sample_male[:180000, 0]
+
+    absorption_factor = 0.99
     fs = 44100
     # end of init variables
 
     # prepare a room
     floor = np.array([[0, 0, 6, 6],
                       [0, 8, 8, 0]])
-    # micLocation = np.array([[1.0, 1.0], [3.98, 4.02], [1.5, 1.5]])
-    # micLocation1 = np.array([[3.02, 2.98], [1.5, 1.5], [1.5, 1.5]])
 
-    room = roomBuild.RoomBuilder(floor, fs, absorptionFactor, height=3.5, sourcesArray=[2.6, 4.7, 1.8],
-                                 filePath=soundFilePath, micLocationArray=micLocation).getRoom()
-    micArray = pra.MicrophoneArray(micLocation, room.fs)
-    room.add_microphone_array(micArray)
+    builder = room_builder.RoomBuilder(floor, fs, absorption_factor, height=3.5, sources_array=source1,
+                                       file_path=sound_file_path_female, mic_location_array=mic_location)
+    builder.add_sources(sources_array=source1, voice_sample=voice_sample_female)
+    room = builder.get_room()
+
+    if source2 is not None:
+        src_count = 2
+        builder.add_sources(sources_array=source2, voice_sample=voice_sample_male)
 
     # source signal convolution
     room.compute_rir()
-    room.simulate(True)
+    room.simulate()
 
-    print("conv shape: ", np.shape(room.mic_array))
+    #######
+    mic0_processed_signal = processing.convert_float_signal_to_int(room.mic_array.signals[0, :])
+    mic1_processed_signal = processing.convert_float_signal_to_int(room.mic_array.signals[1, :])
+    wavfile.write("mic0_record", 44100, mic0_processed_signal)
 
-    mic1TimeSignal = np.convolve(voiceSample, room.rir[0][0])
-    mic2TimeSignal = np.convolve(voiceSample, room.rir[1][0])
+    #pyroom stft
+    # STFT = pra.transform.stft.STFT(N=2048)
+    # stft_pra_sig0 = pra.transform.stft.analysis(mic0_processed_signal, L=2048, hop=128)
+    # stft_pra_sig1 = pra.transform.stft.analysis(mic1_processed_signal, L=2048, hop=128)
+    #######
 
     # STFT
-    f1, t1, stftSignal1 = signal.stft(mic1TimeSignal, fs=sampleFs, nperseg=2048)
-    f2, t2, stftSignal2 = signal.stft(mic2TimeSignal, fs=sampleFs, nperseg=2048)
+    f1, t1, stft_signal1 = signal.stft(mic0_processed_signal, fs=sample_fs, nperseg=2048)
+    f2, t2, stft_signal2 = signal.stft(mic1_processed_signal, fs=sample_fs, nperseg=2048)
 
     # DOA
-    threeDimSig1 = stftSignal1[np.newaxis, :]
-    threeDimSig2 = stftSignal2[np.newaxis, :]
-    print(np.shape(stftSignal1))
-    print(np.shape(np.vstack([threeDimSig1, threeDimSig2])))
+    three_dim_sig1 = stft_signal1[np.newaxis, :]
+    three_dim_sig2 = stft_signal2[np.newaxis, :]
+    input_doa_signal = np.vstack([three_dim_sig1, three_dim_sig2])
 
-    doaModule = doaWrapper.DoaModuleWrapper(micLocation, room.fs, 2048, option=doaWrapper.DoaModuleWrapper.DoaOption.SRP)
-    doaModule.calculateDoaAndPlot(xNumpyArray=np.vstack([threeDimSig1, threeDimSig2]), sourceCount=1)
-    print("Calculated angle = " + str(doaModule.getAngle()))
+    doa_module = doa_wrapper.DoaModuleWrapper(mic_location, room.fs, 2048,
+                                              option=doa_wrapper.DoaModuleWrapper.DoaOption.MUSIC, src_count=src_count)
+    doa_module.calculate_doa_and_plot(x_numpy_array=input_doa_signal, source_count=src_count)
+    print("Calculated angle = " + str(doa_module.get_angle()))
 
-    if plotSpectrogram1:
+    if plot_spectrogram1:
         plt.figure("Spectrogram1")
-        plt.pcolormesh(t1, f1, np.abs(stftSignal1))
+        plt.pcolormesh(t1, f1, np.abs(stft_signal1))
 
-    if plotSpectrogram2:
+    if plot_spectrogram2:
         plt.figure("Spectrogram2")
-        plt.specgram(mic1TimeSignal, Fs=sampleFs)
+        plt.specgram(mic0_processed_signal, Fs=sample_fs)
 
-    if plotRoom:
+    if plot_room:
         room.plot(img_order=1, aspect='equal')
         plt.xlabel("x axis")
         plt.ylabel("y axis")
 
-    if plotRir:
+    if plot_rir:
         plt.figure("rir")
         room.plot_rir()
 
-    if masterPlot: plt.show()
+    if master_plot: plt.show()
 
-    return doaModule.getAngle()
+    return doa_module.get_angle()
