@@ -25,6 +25,4 @@ source_location2 = [2.0, 1.5, 1.8]
 angle_from_first_pair = room.receive_angles(mic_location1, source_location1, source_location2)
 angle_from_second_pair = room.receive_angles(mic_location2, source_location1, source_location2)
 
-# print(angle_from_first_pair)
-# print(angle_from_second_pair)
 print(processing.find_crossing(angle_from_first_pair, angle_from_second_pair, [1.02, 4.0], [4.0, 1.52]))
