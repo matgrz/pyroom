@@ -13,8 +13,10 @@ class DoaModuleWrapper:
         else:
             self.doaModule = pra.doa.MUSIC(mic_position_array, room_frequency_sample, nfft, num_src=src_count)
 
-    def calculate_doa_and_plot(self, x_numpy_array, source_count):
-        self.doaModule.locate_sources(x_numpy_array, num_src=source_count)
+    def calculate_doa(self, x_numpy_array):
+        self.doaModule.locate_sources(x_numpy_array, freq_range=[500, 4000])
+
+    def plot_doa(self):
         self.doaModule.polar_plt_dirac()
 
     def get_angle(self):
