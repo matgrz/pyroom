@@ -1,18 +1,16 @@
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
-import pyroomacoustics as pra
 from scipy.io import wavfile
 
-import doa_module_wrapper as doa_wrapper
-import room_builder as room_builder
+from simulationtools import room_builder as room_builder, doa_module_wrapper as doa_wrapper
 from utils import processing
 
 # == data to plot ==
-master_plot       = 1
+master_plot       = 0
 plot_rir          = 0
-plot_room         = 1
-plot_doa_radar    = 1
+plot_room         = 0
+plot_doa_radar    = 0
 plot_spectrogram1 = 0
 plot_spectrogram2 = 0
 # ==================
@@ -46,11 +44,8 @@ def receive_angles(mic_location, source1, source2=None):
         src_count = 2
         builder.add_sources(sources_array=source2, voice_sample=voice_sample_male)
 
-    # source signal convolution
-    # room.compute_rir()
     room.simulate()
 
-    #######
     mic0_processed_signal = processing.convert_float_signal_to_int(room.mic_array.signals[0, :])
     mic1_processed_signal = processing.convert_float_signal_to_int(room.mic_array.signals[1, :])
     mic2_processed_signal = processing.convert_float_signal_to_int(room.mic_array.signals[2, :])
@@ -65,9 +60,6 @@ def receive_angles(mic_location, source1, source2=None):
 
     # DOA
     input_doa_signal = np.vstack([stft_signal1[np.newaxis, :], stft_signal2[np.newaxis, :], stft_signal3[np.newaxis, :], stft_signal4[np.newaxis, :]])
-
-    # print("input_doa signal shape: ", np.shape(input_doa_signal))
-    # print("stft_output shape: ", np.shape(stft_signal1))
 
     # create DOA module
     doa_module = doa_wrapper.DoaModuleWrapper(mic_location, room.fs, nsamples, src_count=src_count,
@@ -94,6 +86,7 @@ def receive_angles(mic_location, source1, source2=None):
         plt.figure("rir")
         room.plot_rir()
 
-    if master_plot: plt.show()
+    if master_plot:
+        plt.show()
 
     return doa_module.get_angle()

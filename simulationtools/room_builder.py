@@ -1,14 +1,10 @@
 import pyroomacoustics as pra
-from scipy.io import wavfile
-import numpy as np
 
 
 class RoomBuilder:
     def __init__(self, room_dimensions, fs, absorption_factor, mic_location_array):
 
-        # self.room = pra.Room.from_corners(floor, fs=fs, absorption=absorption_factor, max_order=1)
         self.room = pra.ShoeBox(room_dimensions, fs=fs, absorption=absorption_factor, max_order=3)
-
         self.add_microphones(mic_location_array, fs)
 
     def set_height(self, height):

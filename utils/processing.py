@@ -4,14 +4,22 @@ import math
 
 def convert_float_signal_to_int(signal):
     """
-    function converts a signal which contains floating point data - floats are being converted to int
+    Converts a signal which contains floating point data - floats are being converted to int
     :param signal: input data
     :return: signal containing integers
     """
     return np.int16(signal / np.max(np.abs(signal)) * 32767)
 
 
-def find_crossing(angle_array1, angle_array2, mic_center1, mic_center2):
+def find_intersections(angle_array1, angle_array2, mic_center1, mic_center2):
+    """
+    Locates all intersections provided by DOA angles.
+    :param angle_array1:  array of ints
+    :param angle_array2:  array of ints
+    :param mic_center1:  [x, y] format ints, central point of microphone array
+    :param mic_center2:  [x, y] format ints
+    :return: array of [x, y] elements, every element denotes an intersection
+    """
 
     sources_locations = list()
 
@@ -42,3 +50,13 @@ def find_crossing(angle_array1, angle_array2, mic_center1, mic_center2):
                 sources_locations.append([x, y])
 
     return sources_locations
+
+
+def calculate_angular_distance(x, y):
+
+    x = math.pi * x / 180
+    y = math.pi * y / 180
+    u_x = [math.cos(x), math.sin(x)]
+    u_y = np.transpose([math.cos(y), math.sin(y)])
+
+    return math.acos(np.matmul(u_x, u_y))
