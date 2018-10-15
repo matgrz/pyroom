@@ -61,6 +61,66 @@ class RoomWrapper:
 
         return doa_module.get_angle()
 
+    def receive_features(self, mic_location, history_length, threshold):
+
+        room = self.create_room(mic_location, self.config.source_location1, self.config.source_location2)
+        room.simulate()
+        processed_signals_array = self.process_signals(room.mic_array)
+        f1, t1, input_doa_signal = self.calculate_stft(processed_signals_array)
+        doa_module = self.create_doa_module(mic_location, room)
+
+        fr_len = 5  # TODO remove hardcoded value and extract parameter
+        fr_limit = 100
+
+        list_of_frames_dicts = []   # contains [index_of_frame, dictionary for that frame, theta]
+
+        # part I
+        for frame_no in range(0, fr_limit, fr_len):     # dla kazdej ramki danej macierzy mikrofonowej np.shape(t1)[0]-5
+
+            print("LOG_DBG: frame_no = ", frame_no)
+            fi = dict.fromkeys(self.config.L)       # stworz slownik z kluczami dla L
+
+            for l in self.config.L:                            # dla każdej czestotliwości l należacej do L
+                print("LOG_DBG: l = ", l)
+                fi[l] = [doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + fr_len)], l)]      # wylicz DOA wąskopasmowo dla freq. bin = l dla ramki o długości fr_len * nsamples
+
+            doa_module.calculate_doa(input_doa_signal[:, :, frame_no:(frame_no + fr_len)])  # wylicz DOA szerokopasmowo     TODO zapytać o kąty - porównywać do "lokalnych" należących do ramki czy do finalnie wyznaczonych
+            theta = doa_module.get_angle()                                                  # przypisz do danej ramki
+            print("LOG_DBG: broadband doa angles = ", theta)
+
+            index = frame_no / fr_len
+            list_of_frames_dicts.append([index, fi, theta])
+            print(fi)
+
+        # part II # TODO prepare variant where alle angles have their feateures calculated
+        feature_list = {}.fromkeys(self.config.L, 0)  # [freq, value] - dla danej czestotliwosci l przypisana liczba dopasowań
+
+        print("LOG_DBG: frames estimations = ", list_of_frames_dicts)
+        frames_count = np.shape(list_of_frames_dicts)[0]
+        print("LOG_DBG: fr_count = ", frames_count)
+
+        for x in range(history_length - 1, frames_count):             # liczba_ramek - B porównań
+            for tou_prim in range(history_length - 1, fr_limit // fr_len):   # zacznij od pierwszych B ramek, dla kazdej ramki tou_prim pomiedzy obecna ramka a B poprzednimi
+
+                list_of_k = []  # lista wartosci zwracanych przez funkcjie angular distance - potem wyciagnac z tego min
+                for l in self.config.L:  # dla kazdej freq l z L
+                    # print("LOG_DBG: val from frames = ", ((list_of_frames_dicts[x][1])[l])[0][0])
+                    # print("LOG_DBG: val from frames = ", (list_of_frames_dicts[x][2])[0])
+
+                    # for angle in (list_of_frames_dicts[x][2]):
+                    #     list_of_k.append(processing.calculate_angular_distance(((list_of_frames_dicts[x][1])[l])[0][0],     # jako argument z x'owej ramki wez slownik, a z jego l'tej czestotliwosci wez kąt
+                    #                                                             angle))
+                    # k = min(list_of_k)
+                    # print("LOG_DBG: k = ", k)
+
+                    if processing.calculate_angular_distance(((list_of_frames_dicts[x][1])[l])[0][0], (list_of_frames_dicts[x][2])[0]) < processing.calculate_angular_distance(((list_of_frames_dicts[x][1])[l])[0][0], (list_of_frames_dicts[x][2])[1]):
+
+                        if processing.calculate_angular_distance(((list_of_frames_dicts[x][1])[l])[0][0], (list_of_frames_dicts[x][2])[0]) < threshold:
+                            feature_list[l] += 1
+
+        print("LOG_DBG: feature list = ", feature_list)
+        return feature_list
+
     def create_doa_module(self, mic_location, room):
         doa_module = doa_wrapper.DoaModuleWrapper(mic_location, room.fs, self.config.nsamples, src_count=self.src_count,
                                                   option=doa_wrapper.DoaModuleWrapper.DoaOption.MUSIC)

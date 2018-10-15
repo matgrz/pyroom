@@ -12,6 +12,9 @@ class ProcessingTest(unittest.TestCase):
     expected_result = [[0.0, 4.0], [float('Inf'), None], [None, float('Inf')], [0.0, 0.0]]
 
     # test_angular_distance_calculation variables
+    angle1 = 30
+    angle2 = 75
+    result = math.pi * 45 / 180
 
     def test_given_mics_and_sources_in_the_corners(self):
         array_of_positions = processing.find_intersections(self.angle_array1, self.angle_array2, self.mic_center1,
@@ -20,7 +23,7 @@ class ProcessingTest(unittest.TestCase):
         self.assertTrue(self.expected_result == array_of_positions, "Positions not equal")
 
     def test_angular_distance_calculation(self):
-        self.assertAlmostEqual(processing.calculate_angular_distance(30, 75), math.pi * 45 / 180)
+        self.assertAlmostEqual(processing.calculate_angular_distance(self.angle1, self.angle2), self.result)
 
 
 if __name__ == '__main__':

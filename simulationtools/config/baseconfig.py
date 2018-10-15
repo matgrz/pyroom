@@ -10,7 +10,7 @@ class BaseConfig:
         self.fs = 44100
         self.nsamples = 2048
         self.frame_length = 50
-        self.L = [1000, 2000, 3000, 4000]
+        self.L = [500, 600, 750, 900, 1000]
         self.mic_location1 = np.c_[
             [1.00, 4.02, 1.5],  # mic1
             [1.00, 3.98, 1.5],  # mic2

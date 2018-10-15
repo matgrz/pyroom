@@ -16,6 +16,10 @@ class DoaModuleWrapper:
     def calculate_doa(self, x_numpy_array):
         self.doaModule.locate_sources(x_numpy_array, freq_range=[500, 4000])
 
+    def calculate_narrowband_doa(self, x_numpy_array, l):
+        self.doaModule.locate_sources(x_numpy_array, freq_bins=[l])
+        return self.doaModule.src_idx
+
     def plot_doa(self):
         self.doaModule.polar_plt_dirac()
 

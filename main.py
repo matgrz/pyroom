@@ -4,6 +4,7 @@ from simulationtools import room_wrapper
 from simulationtools.config import baseconfig
 from utils import processing
 from utils import plotting
+import matplotlib.pyplot as plt
 
 
 #==================================================#
@@ -32,5 +33,10 @@ angle_from_second_pair = room.receive_angles(mic_location2, source_location1, so
 found_crossings = processing.find_intersections(angle_from_first_pair, angle_from_second_pair, [1.02, 4.0], [4.0, 1.52])
 print(found_crossings)
 
-plotting.plot_crossings(found_crossings, [source_location1, source_location2], [6., 8., 3.8], [[1.02, 4.], [4., 1.52]],
-                        [angle_from_first_pair, angle_from_second_pair])
+# plotting.plot_crossings(found_crossings, [source_location1, source_location2], [6., 8., 3.8], [[1.02, 4.], [4., 1.52]],
+#                         [angle_from_first_pair, angle_from_second_pair])
+
+feature_list = room.receive_features(mic_location1, 2, 1.0)
+plt.bar(range(len(feature_list)), list(feature_list.values()), align='center')
+plt.xticks(range(len(feature_list)), list(feature_list.keys()))
+plt.show()
