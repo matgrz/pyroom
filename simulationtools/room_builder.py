@@ -2,9 +2,9 @@ import pyroomacoustics as pra
 
 
 class RoomBuilder:
-    def __init__(self, room_dimensions, fs, absorption_factor, mic_location_array):
+    def __init__(self, room_dimensions, fs, absorption_factor, mic_location_array, order=0):
 
-        self.room = pra.ShoeBox(room_dimensions, fs=fs, absorption=absorption_factor, max_order=3)
+        self.room = pra.ShoeBox(room_dimensions, fs=fs, absorption=absorption_factor, max_order=order)
         self.add_microphones(mic_location_array, fs)
 
     def set_height(self, height):
