@@ -5,6 +5,7 @@ from scipy.io import wavfile
 
 from simulationtools import room_builder as room_builder, doa_module_wrapper as doa_wrapper
 from utils import processing
+from utils import log
 
 # == data to plot ==
 master_plot       = 0
@@ -14,6 +15,7 @@ plot_doa_radar    = 0
 plot_spectrogram1 = 0
 plot_spectrogram2 = 0
 # ==================
+log = log.Log()
 
 
 class RoomWrapper:
@@ -33,18 +35,20 @@ class RoomWrapper:
         f1, t1, input_doa_signal = self.calculate_stft(processed_signals_array)
         doa_module = self.create_doa_module(mic_location, room)
         doa_module.calculate_doa(x_numpy_array=input_doa_signal)
-        print("LOG_INFO: Calculated angle = " + str(doa_module.get_angle()))
+        log.INFO("Calculated angle = " + str(doa_module.get_angle()))
 
         if plot_doa_radar:
             doa_module.plot_doa()
 
-        # if plot_spectrogram1:
-        #     plt.figure("Spectrogram1")
-        #     plt.pcolormesh(t1, f1, np.abs(stft_signal1))
-        #
-        # if plot_spectrogram2:
-        #     plt.figure("Spectrogram2")
-        #     plt.specgram(mic0_processed_signal, Fs=self.config.fs)
+        if plot_spectrogram1:
+            plt.figure("Spectrogram1")
+            plt.pcolormesh(t1, f1, np.abs(input_doa_signal[0, :, :]))
+
+        if plot_spectrogram2:
+            plt.figure("Spectrogram2")
+            plt.specgram(processed_signals_array[0], Fs=self.config.fs)
+            plt.xlabel("czas [s]", fontsize=12)
+            plt.ylabel("częstotliwość [Hz]", fontsize=12)
 
         if plot_room:
             room.plot(img_order=1, aspect='equal')
@@ -61,7 +65,8 @@ class RoomWrapper:
 
         return doa_module.get_angle()
 
-    def receive_features(self, mic_location, history_length, threshold):
+# wersja z porownywaniem tylko dobrych DOA
+    def receive_features(self, mic_location, history_length, threshold, doas, fr_limit):
 
         room = self.create_room(mic_location, self.config.source_location1, self.config.source_location2, self.order)
         room.simulate()
@@ -70,61 +75,56 @@ class RoomWrapper:
         doa_module = self.create_doa_module(mic_location, room)
         wide_doa = self.create_doa_module(mic_location, room, doa_type=doa_wrapper.DoaModuleWrapper.DoaOption.SRP)
 
-        fr_len = 5  # TODO remove hardcoded value and extract parameter
-        fr_limit = 100
-
         list_of_frames_dicts = []   # contains [index_of_frame, dictionary for that frame, theta]
 
         # part I
-        for frame_no in range(0, fr_limit, fr_len):     # dla kazdej ramki danej macierzy mikrofonowej np.shape(t1)[0]
+        for frame_no in range(0, fr_limit):     # dla kazdej ramki danej macierzy mikrofonowej np.shape(t1)[0]
 
-            print("LOG_DBG: frame_no = ", frame_no)
+            log.DBG("frame_no = ", frame_no)
             fi = dict.fromkeys(self.config.L)           # stworz slownik z kluczami dla L
 
             for l in self.config.L:                            # dla każdej czestotliwości l należacej do L
-                fi[l] = doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + fr_len)], l)      # wylicz DOA wąskopasmowo dla freq. bin = l dla ramki o długości fr_len * nsamples
+                fi[l] = doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + 1)], l)      # wylicz DOA wąskopasmowo dla freq. bin = l dla ramki o długości fr_len * nsamples
 
-                wide_doa.calculate_doa(input_doa_signal[:, :, frame_no:(frame_no + fr_len)])  # wylicz DOA szerokopasmowo     TODO zapytać o kąty - porównywać do "lokalnych" należących do ramki czy do finalnie wyznaczonych
-            theta = doa_module.get_angle()                                                    # przypisz do danej ramki
-            print("LOG_DBG: broadband doa angles = ", theta)
-
-            index = frame_no / fr_len
-            list_of_frames_dicts.append([index, fi, theta])
-            print(fi)
-
-        # part II # TODO prepare variant where alle angles have their feateures calculated
-        feature_list1 = {}.fromkeys(self.config.L, 0)  # [freq, value] - dla danej czestotliwosci l przypisana liczba dopasowań
-        feature_list2 = {}.fromkeys(self.config.L, 0)  # dla drugiego kąta
+            # index = frame_no / fr_len
+            list_of_frames_dicts.append([frame_no, fi])
+            log.DBG("fi value: ", fi)
 
         frames_count = np.shape(list_of_frames_dicts)[0]
-        print("LOG_DBG: frames estimations = ", list_of_frames_dicts)
-        print("LOG_DBG: fr_count = ", frames_count)
+        log.DBG("frames estimations = ", list_of_frames_dicts)
+        log.DBG("fr_count = ", frames_count)
 
-        for frame_index in range(history_length - 1, frames_count):             # liczba_ramek - B porównań
+        all_feature_lists = list()
+        for frame_index in range(history_length - 1, frames_count, history_length):             # liczba_ramek - B porównań
+            feature_list1 = {}.fromkeys(self.config.L, 0)  # [freq, value] - dla danej czestotliwosci l przypisana liczba dopasowań
+            feature_list2 = {}.fromkeys(self.config.L, 0)  # dla drugiego kąta
             for tou_prim in range(frame_index - history_length, frame_index):   # zacznij od pierwszych B ramek, dla kazdej ramki tou_prim pomiedzy obecna ramka a B poprzednimi
                 for l in self.config.L:  # dla kazdej freq l z L
-                    index_theta = 2
                     index_dict = 1
-                    first_angle = 0
-                    second_angle = 1
 
-                    left_operand = ((list_of_frames_dicts[tou_prim][index_dict])[l])[first_angle]        # TODO [first_angle]
-                    theta_array = (list_of_frames_dicts[frame_index][index_theta])
-                                                                                                            # TODO implement checking with previous frames, function input: current and B previous frames, output bool
-                    if processing.calculate_angular_distance(left_operand, theta_array[first_angle]) \
-                       < processing.calculate_angular_distance(left_operand, theta_array[second_angle]):    # TODO swap first/secnond_angle
+                    k = threshold
+                    hist_index = 0
 
-                        if processing.calculate_angular_distance(left_operand, theta_array[first_angle]) < threshold:   # TODO [first_angle]
+                    for teta_p in doas:
+                        # log.DBG("theta_p = ", teta_p)
+                        for fi_tou in (list_of_frames_dicts[tou_prim][index_dict])[l]:
+                            # log.DBG("    fi_tou = ", fi_tou)
+                            # log.DBG("    A = ", processing.calculate_angular_distance(fi_tou, teta_p))
+                            if processing.calculate_angular_distance(fi_tou, teta_p) < k:
+                                k = processing.calculate_angular_distance(fi_tou, teta_p)
+                                hist_index = teta_p
+
+                    if k < threshold:
+                        if hist_index == doas[0]:
+                            # log.DBG("    assigned to 1")
                             feature_list1[l] += 1
-                                                                                                            # dla drugiego kąta
-                    if processing.calculate_angular_distance(left_operand, theta_array[second_angle]) \
-                        < processing.calculate_angular_distance(left_operand, theta_array[first_angle]):
-
-                        if processing.calculate_angular_distance(left_operand, theta_array[second_angle]) < threshold:
+                        elif hist_index == doas[1]:
+                            # log.DBG("    assigned to 2")
                             feature_list2[l] += 1
 
-        print("LOG_DBG: feature list = ", feature_list1)
-        return feature_list1, feature_list2
+            all_feature_lists.append([feature_list1, feature_list2])
+
+        return all_feature_lists
 
     def create_doa_module(self, mic_location, room, doa_type=doa_wrapper.DoaModuleWrapper.DoaOption.MUSIC):
         doa_module = doa_wrapper.DoaModuleWrapper(mic_location, room.fs, self.config.nsamples, src_count=self.src_count,
@@ -136,7 +136,7 @@ class RoomWrapper:
         builder = room_builder.RoomBuilder(self.config.room_dimension, self.config.fs,
                                            absorption_factor=self.config.absorption, mic_location_array=mic_location,
                                            order=max_order)
-        builder.add_sources(sources_array=source1, voice_sample=self.voice_sample_female, delay=0.2)
+        builder.add_sources(sources_array=source1, voice_sample=self.voice_sample_female, delay=0.3)
         room = builder.get_room()
 
         if source2 is not None:

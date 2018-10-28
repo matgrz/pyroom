@@ -1,5 +1,9 @@
 import numpy as np
 import math
+from utils import log
+
+
+log = log.Log()
 
 
 def convert_float_signal_to_int(signal):
@@ -59,4 +63,37 @@ def calculate_angular_distance(x, y):
     u_x = [math.cos(x), math.sin(x)]
     u_y = np.transpose([math.cos(y), math.sin(y)])
 
-    return math.acos(np.matmul(u_x, u_y))
+    try:
+        return math.acos(np.matmul(u_x, u_y))
+    except:
+        log.WRN("LOG_WRN: unexpected error, returning pi")
+        return math.pi
+
+
+def decimate_histogram(hist_data, d):
+
+    hist_list = list(hist_data.values())
+
+    h_prim = list()
+    for x in range(0, len(hist_list) // d):
+
+        h_prim.append(0)
+        for k in range(0, d):
+            h_prim[x] += hist_list[d*x + k]
+
+    return h_prim
+
+
+def euclidean_distance(hist1, hist2):
+
+    value = 0
+    hist_length = len(hist1)
+    for n in range(hist_length):
+        value += pow(hist1[n] - hist2[n], 2) / hist_length
+
+    return pow(value, 0.5)
+
+
+def sort_dict_by_value(dictionary):
+    import operator
+    return sorted(dictionary.items(), key=operator.itemgetter(1))
