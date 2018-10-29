@@ -73,7 +73,7 @@ class RoomWrapper:
         processed_signals_array = self.process_signals(room.mic_array)
         _, _, input_doa_signal = self.calculate_stft(processed_signals_array)
         doa_module = self.create_doa_module(mic_location, room)
-        wide_doa = self.create_doa_module(mic_location, room, doa_type=doa_wrapper.DoaModuleWrapper.DoaOption.SRP)
+        # wide_doa = self.create_doa_module(mic_location, room, doa_type=doa_wrapper.DoaModuleWrapper.DoaOption.SRP)
 
         list_of_frames_dicts = []   # contains [index_of_frame, dictionary for that frame, theta]
 

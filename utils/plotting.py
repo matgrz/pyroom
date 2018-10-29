@@ -42,6 +42,7 @@ def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor):
         feature_list.append(processing.decimate_histogram(all_feature_lists2[histogram_number][0], decimation_factor))
         feature_list.append(processing.decimate_histogram(all_feature_lists2[histogram_number][1], decimation_factor))
 
+        max_val = np.amax(feature_list)
         plot_index = 1
         for features in feature_list:
             plt.subplot(2, 2, plot_index)
@@ -52,6 +53,7 @@ def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor):
             plt.xticks(range(0, len(features), 2), range(0, len(features), 2))
             plt.xlabel("indeks częstotliwości")
             plt.ylabel("liczebność dopasowań")
+            plt.ylim(top=1.1*max_val)
             plot_index += 1
 
         plt.show()

@@ -18,15 +18,28 @@ angle2 = 75
 result = math.pi * 45 / 180
 
 # test_decimation variables
-hist = [2, 3, 4, 4, 3, 1, 8, 9]
+hist = {500: 2, 550: 3, 600: 4, 700: 4, 750: 3, 800: 1, 850: 8, 900: 9}
 expected_dec_hist = [5, 8, 4, 17]
+expected_dec_hist_by_one = [2, 3, 4, 4, 3, 1, 8, 9]
+
+# euclidean test variables
+x1 = [5, 5, 5, 5, 5]
+x2 = [4, 3, 3, 0, 5]
+x3 = [0, 0, 0, 0, 0]
+result_x1_x1 = 0
+result_x1_x2 = 1.36 / 5
+result_x1_x3 = 1
+
+# sort dict variables
+dict_to_sort = {"a": 3, "b": 1, "c": 2}
+dict_sorted = [('b', 1), ('c', 2), ('a', 3)]
 
 
 class ProcessingTest(unittest.TestCase):
     def test_given_mics_and_sources_in_the_corners(self):
         array_of_positions = processing.find_intersections(angle_array1, angle_array2, mic_center1,
                                                            mic_center2)
-        print("LOG_INF: ", array_of_positions)
+        log.INFO("array position: ", array_of_positions)
         self.assertTrue(expected_result == array_of_positions, "Positions not equal")
 
     def test_angular_distance_calculation(self):
@@ -34,6 +47,21 @@ class ProcessingTest(unittest.TestCase):
 
     def test_decimation(self):
         self.assertEqual(processing.decimate_histogram(hist_data=hist, d=2), expected_dec_hist)
+
+    def test_decimation_by_one(self):
+        self.assertEqual(processing.decimate_histogram(hist_data=hist, d=1), expected_dec_hist_by_one)
+
+    def test_euclidean_dist_empty(self):
+        self.assertEqual(processing.euclidean_distance(x1, x1), result_x1_x1)
+
+    def test_euclidean_dist(self):
+        self.assertAlmostEqual(processing.euclidean_distance(x1, x2), result_x1_x2)
+
+    def test_euclidean_dist_max_difference(self):
+        self.assertAlmostEqual(processing.euclidean_distance(x1, x3), result_x1_x3)
+
+    def test_dictionary_sorting(self):
+        self.assertEqual(processing.sort_dict_by_value(dict_to_sort), dict_sorted)
 
 
 if __name__ == '__main__':

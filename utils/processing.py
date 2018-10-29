@@ -57,7 +57,12 @@ def find_intersections(angle_array1, angle_array2, mic_center1, mic_center2):
 
 
 def calculate_angular_distance(x, y):
-
+    """
+    Calculates angular distance between two angles.
+    :param x: first angle [degree]
+    :param y: second angle [degree]
+    :return: angular distance value [radian]
+    """
     x = math.pi * x / 180
     y = math.pi * y / 180
     u_x = [math.cos(x), math.sin(x)]
@@ -71,7 +76,13 @@ def calculate_angular_distance(x, y):
 
 
 def decimate_histogram(hist_data, d):
-
+    """
+    Decimates histogram by a decimation factor of d.
+    When d == 1 it converts dict histogram to list based histogram.
+    :param hist_data: histogram data (dictionary)
+    :param d: decimation factor
+    :return: list of decimated histogram values by a factor of d
+    """
     hist_list = list(hist_data.values())
 
     h_prim = list()
@@ -84,16 +95,42 @@ def decimate_histogram(hist_data, d):
     return h_prim
 
 
-def euclidean_distance(hist1, hist2):
+# def euclidean_distance(hist1, hist2):
+#     """
+#     Calculates normalized euclidean distance.
+#     :param hist1: first histogram to be compared
+#     :param hist2: second histogram to be compared
+#     :return: euclidean distance [float]
+#     """
+#     value = 0
+#     hist_length = len(hist1)
+#     for n in range(hist_length):
+#         value += pow(hist1[n] - hist2[n], 2) / hist_length
+#
+#     return pow(value, 0.5)
 
+
+def euclidean_distance(hist1, hist2):
+    """
+    Calculates normalized euclidean distance.
+    :param hist1: first histogram to be compared
+    :param hist2: second histogram to be compared
+    :return: euclidean distance [float]
+    """
+    max_val = max([max(hist1), max(hist2)])
     value = 0
     hist_length = len(hist1)
     for n in range(hist_length):
-        value += pow(hist1[n] - hist2[n], 2) / hist_length
+        value += pow(hist1[n]/max_val - hist2[n]/max_val, 2)
 
-    return pow(value, 0.5)
+    return value / hist_length
 
 
 def sort_dict_by_value(dictionary):
+    """
+    Sorts a dictionary by its values.
+    :param dictionary: dictionary to be sorted
+    :return: sorted dictionary formatted as a list
+    """
     import operator
     return sorted(dictionary.items(), key=operator.itemgetter(1))
