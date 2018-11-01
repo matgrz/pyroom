@@ -46,10 +46,7 @@ def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor):
         plot_index = 1
         for features in feature_list:
             plt.subplot(2, 2, plot_index)
-            if plot_index == 1 or plot_index == 3:
-                plt.bar(range(len(features)), list(features), align='center', color="red")
-            else:
-                plt.bar(range(len(features)), list(features), align='center')
+            plt.bar(range(len(features)), list(features), align='center', color="red")
             plt.xticks(range(0, len(features), 2), range(0, len(features), 2))
             plt.xlabel("indeks częstotliwości")
             plt.ylabel("liczebność dopasowań")
@@ -58,16 +55,12 @@ def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor):
 
         plt.show()
 
-        euc_result = {}.fromkeys(["D13", "D14", "D23", "D24"])
-        euc_result["D13"] = processing.euclidean_distance(feature_list[0], feature_list[2])
-        euc_result["D14"] = processing.euclidean_distance(feature_list[0], feature_list[3])
-        euc_result["D23"] = processing.euclidean_distance(feature_list[1], feature_list[2])
-        euc_result["D24"] = processing.euclidean_distance(feature_list[1], feature_list[3])
+        euc_result = {}.fromkeys(["D02", "D03", "D12", "D13"])
+        euc_result["D02"] = processing.euclidean_distance(feature_list[0], feature_list[2])
+        euc_result["D03"] = processing.euclidean_distance(feature_list[0], feature_list[3])
+        euc_result["D12"] = processing.euclidean_distance(feature_list[1], feature_list[2])
+        euc_result["D13"] = processing.euclidean_distance(feature_list[1], feature_list[3])
 
-        log.DBG("euc_result = ", euc_result)
         sorted_euc = processing.sort_dict_by_value(euc_result)
-        if sorted_euc[0][0] == "D24" or sorted_euc[0][0] == "D13" and sorted_euc[1][0] == "D24" or sorted_euc[1][0] == "D13":
-            log.DBG("   verdict: PASSED")
-        else:
-            log.DBG("   verdict: FAILED")
+
 

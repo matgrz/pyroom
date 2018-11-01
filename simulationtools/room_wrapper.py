@@ -7,14 +7,6 @@ from simulationtools import room_builder as room_builder, doa_module_wrapper as 
 from utils import processing
 from utils import log
 
-# == data to plot ==
-master_plot       = 0
-plot_rir          = 0
-plot_room         = 0
-plot_doa_radar    = 0
-plot_spectrogram1 = 0
-plot_spectrogram2 = 0
-# ==================
 log = log.Log()
 
 
@@ -37,31 +29,33 @@ class RoomWrapper:
         doa_module.calculate_doa(x_numpy_array=input_doa_signal)
         log.INFO("Calculated angle = " + str(doa_module.get_angle()))
 
-        if plot_doa_radar:
+        if self.config.plot_doa_radar:
             doa_module.plot_doa()
 
-        if plot_spectrogram1:
+        if self.config.plot_spectrogram1:
             plt.figure("Spectrogram1")
             plt.pcolormesh(t1, f1, np.abs(input_doa_signal[0, :, :]))
 
-        if plot_spectrogram2:
+        if self.config.plot_spectrogram2:
             plt.figure("Spectrogram2")
             plt.specgram(processed_signals_array[0], Fs=self.config.fs)
             plt.xlabel("czas [s]", fontsize=12)
             plt.ylabel("częstotliwość [Hz]", fontsize=12)
 
-        if plot_room:
+        if self.config.plot_room:
             room.plot(img_order=1, aspect='equal')
             plt.xlabel("x axis")
             plt.ylabel("y axis")
 
-        if plot_rir:
+        if self.config.plot_rir:
             plt.figure("rir")
             room.plot_rir()
 
-        if master_plot:
+        if self.config.master_plot:
             plt.show()
-        wavfile.write("mic0_record", 44100, processed_signals_array[0])
+
+        if self.config.write_mic_signal:
+            wavfile.write("mic0_record", 44100, processed_signals_array[0])
 
         return doa_module.get_angle()
 
@@ -136,7 +130,7 @@ class RoomWrapper:
         builder = room_builder.RoomBuilder(self.config.room_dimension, self.config.fs,
                                            absorption_factor=self.config.absorption, mic_location_array=mic_location,
                                            order=max_order)
-        builder.add_sources(sources_array=source1, voice_sample=self.voice_sample_female, delay=0.3)
+        builder.add_sources(sources_array=source1, voice_sample=self.voice_sample_female, delay=0.0)
         room = builder.get_room()
 
         if source2 is not None:

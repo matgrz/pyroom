@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 class Log:
     def __init__(self):
         self.logger = logging.getLogger("project_logger")

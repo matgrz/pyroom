@@ -12,6 +12,10 @@ mic_center1 = [0, 4]
 mic_center2 = [4, 0]
 expected_result = [[0.0, 4.0], [float('Inf'), None], [None, float('Inf')], [0.0, 0.0]]
 
+single_angle1 = [350]
+single_angle2 = [100]
+result_single_angle = [[3.4, 3.4]]
+
 # test_angular_distance_calculation variables
 angle1 = 30
 angle2 = 75
@@ -34,6 +38,11 @@ result_x1_x3 = 1
 dict_to_sort = {"a": 3, "b": 1, "c": 2}
 dict_sorted = [('b', 1), ('c', 2), ('a', 3)]
 
+# test_is_estimation_close_enough
+real_loc = [1., 1.]
+est_loc = [2., 2.]
+max_r = pow(2, 0.5)
+
 
 class ProcessingTest(unittest.TestCase):
     def test_given_mics_and_sources_in_the_corners(self):
@@ -41,6 +50,11 @@ class ProcessingTest(unittest.TestCase):
                                                            mic_center2)
         log.INFO("array position: ", array_of_positions)
         self.assertTrue(expected_result == array_of_positions, "Positions not equal")
+
+    def test_intersection_of_two_angles(self):
+        position = processing.find_intersections(single_angle1, single_angle2, mic_center1, mic_center2)
+        log.INFO("array position: ", position)
+        self.assertTrue(position == result_single_angle, "Positions not equal")
 
     def test_angular_distance_calculation(self):
         self.assertAlmostEqual(processing.calculate_angular_distance(angle1, angle2), result)
@@ -62,6 +76,9 @@ class ProcessingTest(unittest.TestCase):
 
     def test_dictionary_sorting(self):
         self.assertEqual(processing.sort_dict_by_value(dict_to_sort), dict_sorted)
+
+    def test_is_estimation_close_enough(self):
+        self.assertTrue(processing.is_estimation_close_enough(real_loc, est_loc, max_r))
 
 
 if __name__ == '__main__':

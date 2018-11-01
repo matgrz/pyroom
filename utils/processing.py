@@ -27,7 +27,7 @@ def find_intersections(angle_array1, angle_array2, mic_center1, mic_center2):
 
     sources_locations = list()
 
-    for angle1 in angle_array1: # kazdy kat z kazdym
+    for angle1 in angle_array1:
 
         a1 = math.tan(angle1 * math.pi / 180)
 
@@ -134,3 +134,80 @@ def sort_dict_by_value(dictionary):
     """
     import operator
     return sorted(dictionary.items(), key=operator.itemgetter(1))
+
+
+def is_estimation_close_enough(estmiated_location, real_location, max_r):
+    """
+    Verifies whether estimated location is in a range=max_r of real source.
+    :param estmiated_location: [x, y] estimated coordinates
+    :param real_location: [x, y] real source coordinates
+    :param max_r: arbitrary threshold value
+    :return: boolean
+    """
+    d = pow(pow(real_location[0] - estmiated_location[0], 2) + pow(real_location[1] - estmiated_location[1], 2), 0.5)
+    log.DBG("calculated euclideatn distance = ", d)
+    return d <= max_r
+
+
+def get_matched_angle_indexes(feature_list1, feature_list2, decimation_factor, method_type="EUCLIDEAN"):
+    """
+    Function calculates euclidean distances and returns indexes of matched directions.
+    Index are achieving form sorted dict keys.
+    :param feature_list1: single histogram [dictionary]
+    :param feature_list2: single histogram [dictionary]
+    :param decimation_factor: int
+    :param method_type: str, determines which method of histogram matching is used
+    :return: array of pairs - every pair contain indexes of matching DOA directions respectively
+    """
+    feature_list = prepare_decimated_single_feature_list(feature_list1, feature_list2, decimation_factor)
+
+    # D0-0 means comparision between 1st direction from first mic array and 1st indexed direction from second mic array
+    euc_result = {}.fromkeys(["D0-0", "D0-1", "D1-0", "D1-1"])  # TODO - implement more civilized matching method
+
+    if method_type == "EUCLIDEAN":
+        euc_result["D0-0"] = euclidean_distance(feature_list[0], feature_list[2])
+        euc_result["D0-1"] = euclidean_distance(feature_list[0], feature_list[3])
+        euc_result["D1-0"] = euclidean_distance(feature_list[1], feature_list[2])
+        euc_result["D1-1"] = euclidean_distance(feature_list[1], feature_list[3])
+    elif method_type == "PEARSON":
+        euc_result["D0-0"] = pearsons_correlation(feature_list[0], feature_list[2])
+        euc_result["D0-1"] = pearsons_correlation(feature_list[0], feature_list[3])
+        euc_result["D1-0"] = pearsons_correlation(feature_list[1], feature_list[2])
+        euc_result["D1-1"] = pearsons_correlation(feature_list[1], feature_list[3])
+
+    sorted_euc = sort_dict_by_value(euc_result)
+    return [[int(sorted_euc[0][0][1]), int(sorted_euc[0][0][3])], [int(sorted_euc[1][0][1]), int(sorted_euc[1][0][3])]]
+
+
+def prepare_decimated_single_feature_list(feature_list1, feature_list2, decimation_factor):
+    feature_list = list()
+    feature_list.append(decimate_histogram(feature_list1[0], decimation_factor))
+    feature_list.append(decimate_histogram(feature_list1[1], decimation_factor))
+    feature_list.append(decimate_histogram(feature_list2[0], decimation_factor))
+    feature_list.append(decimate_histogram(feature_list2[1], decimation_factor))
+    return feature_list
+
+
+def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config, mics_center1, mics_center2, max_r=0.25): # TODO - clean this parameter mess
+    estimation1 = find_intersections([angles1[angle_indexes[0][0]]], [angles2[angle_indexes[0][1]]], mics_center1, mics_center2)
+    estimation2 = find_intersections([angles1[angle_indexes[1][0]]], [angles2[angle_indexes[1][1]]], mics_center1, mics_center2)
+
+    log.DBG("estimated location 1: ", estimation1[0])
+    log.DBG("estimated location 2: ", estimation2[0])
+
+    # estimation1[0] because finding intersections returns list of pairs(two element lists)
+    if is_estimation_close_enough(estimation1[0], config.source_location1, max_r) or is_estimation_close_enough(estimation1[0], config.source_location2, max_r):    # TODO - replace these crappy ifs
+        if is_estimation_close_enough(estimation2[0], config.source_location1, max_r) or is_estimation_close_enough(estimation2[0], config.source_location2, max_r):
+            return True
+
+    return False
+
+
+def pearsons_correlation(hist1, hist2):
+
+    cov_h1_h2 = np.cov(hist1, hist2)[0][1]
+    std_h1 = np.std(hist1)
+    std_h2 = np.std(hist2)
+    D = (1 - cov_h1_h2 / (std_h1 * std_h2)) / 2
+    log.DBG("pearson correlation coeficiecy = ", D)
+    return D

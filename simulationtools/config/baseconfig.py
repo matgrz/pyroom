@@ -28,6 +28,15 @@ class BaseConfig:
         self.source_location1 = [2.6, 5.7, 1.8]
         self.source_location2 = [2.0, 1.5, 1.8]
         self.decimation_factor = 1
+        self.matching_method = "PEARSON"
+
+        self.master_plot = 0
+        self.plot_rir = 0
+        self.plot_room = 0
+        self.plot_doa_radar = 0
+        self. plot_spectrogram1 = 0
+        self. plot_spectrogram2 = 0
+        self. write_mic_signal = 0
 
 
 class ConfigI(BaseConfig):
