@@ -1,6 +1,7 @@
 import unittest
 from utils import processing, log
 import math
+import numpy as np
 
 
 log = log.Log()
@@ -43,6 +44,13 @@ real_loc = [1., 1.]
 est_loc = [2., 2.]
 max_r = pow(2, 0.5)
 
+# test create 2D array
+expect_arr = np.c_[
+            [1.02, 4.01, 1.5],  # mic1
+            [1.00, 4.01, 1.5],  # mic2
+            [1.00, 3.99, 1.5],  # mic3
+            [1.02, 3.99, 1.5]]  # mic4
+
 
 class ProcessingTest(unittest.TestCase):
     def test_given_mics_and_sources_in_the_corners(self):
@@ -79,6 +87,10 @@ class ProcessingTest(unittest.TestCase):
 
     def test_is_estimation_close_enough(self):
         self.assertTrue(processing.is_estimation_close_enough(real_loc, est_loc, max_r))
+
+    def test_create_2D_array(self):
+        arr = processing.create_circular_mic_array([1.01, 4., 1.5], 4, np.pi/4, pow(2, 0.5)/100)
+        self.assertTrue(np.array_equal(expect_arr, arr))
 
 
 if __name__ == '__main__':

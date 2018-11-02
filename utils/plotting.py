@@ -24,43 +24,31 @@ def plot_crossings(found_crossings, real_sources, room_dimensions, mics_location
     ax.scatter(*zip(mics_locations[0]), marker="X", s=100, c="gray", label="macierze mikrofonowe")
     ax.scatter(*zip(mics_locations[1]), marker="X", s=100, c="gray")
 
-    # x = np.linspace(0, 1, 10)
-    # ax.plot(x, math.tan(295 * math.pi / 180) * (x - mics_locations[0][0]), linestyle="--")
     plt.xlabel("oś x [m]")
     plt.ylabel("oś y [m]")
-    plt.legend(loc="upper left", bbox_to_anchor=(0.05, 0.95))
-    # for marker, title in zip([["x", "rzeczywiste lokalizacje"], ["o", "szacowane lokalizacje"], ["X", "macierze mikrofonowe"]]):
-    #     plt.plot()
+    # plt.legend(loc="upper left", bbox_to_anchor=(0.05, 0.95))
     plt.show()
 
 
-def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor):
-    for histogram_number in range(np.shape(all_feature_lists1)[0]):
-        feature_list = list()
-        feature_list.append(processing.decimate_histogram(all_feature_lists1[histogram_number][0], decimation_factor))
-        feature_list.append(processing.decimate_histogram(all_feature_lists1[histogram_number][1], decimation_factor))
-        feature_list.append(processing.decimate_histogram(all_feature_lists2[histogram_number][0], decimation_factor))
-        feature_list.append(processing.decimate_histogram(all_feature_lists2[histogram_number][1], decimation_factor))
+def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor, matched_indexes):
 
-        max_val = np.amax(feature_list)
-        plot_index = 1
-        for features in feature_list:
-            plt.subplot(2, 2, plot_index)
+    feature_list = processing.prepare_decimated_single_feature_list(all_feature_lists1,
+                                                                    all_feature_lists2, decimation_factor)
+    # map charts ot be painted red with matched indexes
+    paint_red = [matched_indexes[0][0], matched_indexes[0][1] + 2]
+
+    max_val = np.amax(feature_list)
+    plot_index = 0
+    for features in feature_list:
+        plt.subplot(2, 2, plot_index+1)
+        if plot_index == paint_red[0] or plot_index == paint_red[1]:
             plt.bar(range(len(features)), list(features), align='center', color="red")
-            plt.xticks(range(0, len(features), 2), range(0, len(features), 2))
-            plt.xlabel("indeks częstotliwości")
-            plt.ylabel("liczebność dopasowań")
-            plt.ylim(top=1.1*max_val)
-            plot_index += 1
+        else:
+            plt.bar(range(len(features)), list(features), align='center')
+        plt.xticks(range(0, len(features), 2), range(0, len(features), 2))
+        plt.xlabel("indeks częstotliwości")
+        plt.ylabel("liczebność dopasowań")
+        plt.ylim(top=1.1*max_val)
+        plot_index += 1
 
-        plt.show()
-
-        euc_result = {}.fromkeys(["D02", "D03", "D12", "D13"])
-        euc_result["D02"] = processing.euclidean_distance(feature_list[0], feature_list[2])
-        euc_result["D03"] = processing.euclidean_distance(feature_list[0], feature_list[3])
-        euc_result["D12"] = processing.euclidean_distance(feature_list[1], feature_list[2])
-        euc_result["D13"] = processing.euclidean_distance(feature_list[1], feature_list[3])
-
-        sorted_euc = processing.sort_dict_by_value(euc_result)
-
-
+    plt.show()

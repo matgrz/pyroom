@@ -6,6 +6,21 @@ from utils import log
 log = log.Log()
 
 
+def create_circular_mic_array(center, mics_no, phi, r):
+    delta = 2 * np.pi / mics_no
+    arr = []
+
+    for i in range(mics_no):
+        arr.append([center[0] + r*np.cos(phi+i*delta), center[1] + r*np.sin(phi+i*delta), center[2]])
+
+    mic_arr = [[], [], []]
+    for x in range(3):
+        row = []
+        for y in range(mics_no):
+            row.append(round(arr[y][x], 2))
+        mic_arr[x] = row.copy()
+    return np.array(mic_arr)
+
 def convert_float_signal_to_int(signal):
     """
     Converts a signal which contains floating point data - floats are being converted to int
@@ -53,6 +68,7 @@ def find_intersections(angle_array1, angle_array2, mic_center1, mic_center2):
             else :
                 sources_locations.append([x, y])
 
+    log.INFO("found intersection values: ", sources_locations)
     return sources_locations
 
 
@@ -145,7 +161,7 @@ def is_estimation_close_enough(estmiated_location, real_location, max_r):
     :return: boolean
     """
     d = pow(pow(real_location[0] - estmiated_location[0], 2) + pow(real_location[1] - estmiated_location[1], 2), 0.5)
-    log.DBG("calculated euclideatn distance = ", d)
+    log.DBG("calculated distance between real source and estimation = ", d)
     return d <= max_r
 
 
@@ -209,5 +225,5 @@ def pearsons_correlation(hist1, hist2):
     std_h1 = np.std(hist1)
     std_h2 = np.std(hist2)
     D = (1 - cov_h1_h2 / (std_h1 * std_h2)) / 2
-    log.DBG("pearson correlation coeficiecy = ", D)
+    log.DBG("pearson correlation coeficiency = ", D)
     return D
