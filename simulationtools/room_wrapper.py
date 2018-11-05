@@ -59,41 +59,42 @@ class RoomWrapper:
 
         return doa_module.get_angle()
 
-# wersja z porownywaniem tylko dobrych DOA
-    def receive_features(self, mic_location, history_length, threshold, doas, fr_limit):
+    def receive_features(self, mic_location, doas):
+
+        history_length = self.config.history_length
+        threshold = self.config.threshold
+        fr_limit = self.config.frame_limit
 
         room = self.create_room(mic_location, self.config.source_location1, self.config.source_location2, self.order)
         room.simulate()
         processed_signals_array = self.process_signals(room.mic_array)
         _, _, input_doa_signal = self.calculate_stft(processed_signals_array)
         doa_module = self.create_doa_module(mic_location, room)
-        # wide_doa = self.create_doa_module(mic_location, room, doa_type=doa_wrapper.DoaModuleWrapper.DoaOption.SRP)
 
         list_of_frames_dicts = []   # contains [index_of_frame, dictionary for that frame, theta]
 
         # part I
-        for frame_no in range(0, fr_limit):     # dla kazdej ramki danej macierzy mikrofonowej np.shape(t1)[0]
+        for frame_no in range(0, fr_limit):
 
-            log.DBG("frame_no = ", frame_no)
-            fi = dict.fromkeys(self.config.L)           # stworz slownik z kluczami dla L
+            # log.DBG("frame_no = ", frame_no)
+            fi = dict.fromkeys(self.config.L)        # create dict with keys for every l
 
-            for l in self.config.L:                            # dla każdej czestotliwości l należacej do L
-                fi[l] = doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + 1)], l)      # wylicz DOA wąskopasmowo dla freq. bin = l dla ramki o długości fr_len * nsamples
+            for l in self.config.L:
+                fi[l] = doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + 1)], l)     # TODO find different way to calculate DOA for single freq - this one is very time consuming
 
-            # index = frame_no / fr_len
             list_of_frames_dicts.append([frame_no, fi])
-            log.DBG("fi value: ", fi)
+            # log.DBG("fi value: ", fi)
 
         frames_count = np.shape(list_of_frames_dicts)[0]
-        log.DBG("frames estimations = ", list_of_frames_dicts)
-        log.DBG("fr_count = ", frames_count)
+        # log.DBG("frames estimations = ", list_of_frames_dicts)
+        # log.DBG("fr_count = ", frames_count)
 
         all_feature_lists = list()
-        for frame_index in range(history_length - 1, frames_count, history_length):             # liczba_ramek - B porównań
-            feature_list1 = {}.fromkeys(self.config.L, 0)  # [freq, value] - dla danej czestotliwosci l przypisana liczba dopasowań
-            feature_list2 = {}.fromkeys(self.config.L, 0)  # dla drugiego kąta
-            for tou_prim in range(frame_index - history_length, frame_index):   # zacznij od pierwszych B ramek, dla kazdej ramki tou_prim pomiedzy obecna ramka a B poprzednimi
-                for l in self.config.L:  # dla kazdej freq l z L
+        for frame_index in range(history_length - 1, frames_count, history_length):
+            feature_list1 = {}.fromkeys(self.config.L, 0)  # [freq, value] - value means how many times freq was asociated
+            feature_list2 = {}.fromkeys(self.config.L, 0)
+            for tou_prim in range(frame_index - history_length, frame_index):
+                for l in self.config.L:
                     index_dict = 1
 
                     k = threshold
@@ -140,10 +141,10 @@ class RoomWrapper:
         return room
 
     def read_signals(self):
-        sound_file_path_female = "src/female.wav"
+        sound_file_path_female = self.config.src_signal1
         _, voice_sample_female = wavfile.read(sound_file_path_female)
         self.voice_sample_female = voice_sample_female[:120000]
-        sound_file_path_male = "src/male_fr.wav"
+        sound_file_path_male = self.config.src_signal2
         _, voice_sample_male = wavfile.read(sound_file_path_male)
         self.voice_sample_male = voice_sample_male[40000:160000]
 

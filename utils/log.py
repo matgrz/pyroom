@@ -3,6 +3,9 @@ import sys
 
 
 class Log:
+    """
+    Logging class. Creation of first instance clears main.log file.
+    """
     def __init__(self):
         self.logger = logging.getLogger("project_logger")
         if not self.logger.handlers:

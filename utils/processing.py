@@ -7,6 +7,15 @@ log = log.Log()
 
 
 def create_circular_mic_array(center, mics_no, phi, r):
+    """
+    Creates array with mic_no points located on a circle. It is an imput of pyroomaccoustics mic array.
+    The tool provides 2D circular array ony for Beamformer class.
+    :param center: center of the circle [x, y, z]
+    :param mics_no: number of microphones in the array
+    :param phi: counter clockwise rotation of first element (in regard to x-axis)
+    :param r: radius of circle
+    :return: numpy array of microphones locations
+    """
     delta = 2 * np.pi / mics_no
     arr = []
 
@@ -20,6 +29,7 @@ def create_circular_mic_array(center, mics_no, phi, r):
             row.append(round(arr[y][x], 2))
         mic_arr[x] = row.copy()
     return np.array(mic_arr)
+
 
 def convert_float_signal_to_int(signal):
     """
@@ -111,21 +121,6 @@ def decimate_histogram(hist_data, d):
     return h_prim
 
 
-# def euclidean_distance(hist1, hist2):
-#     """
-#     Calculates normalized euclidean distance.
-#     :param hist1: first histogram to be compared
-#     :param hist2: second histogram to be compared
-#     :return: euclidean distance [float]
-#     """
-#     value = 0
-#     hist_length = len(hist1)
-#     for n in range(hist_length):
-#         value += pow(hist1[n] - hist2[n], 2) / hist_length
-#
-#     return pow(value, 0.5)
-
-
 def euclidean_distance(hist1, hist2):
     """
     Calculates normalized euclidean distance.
@@ -196,6 +191,9 @@ def get_matched_angle_indexes(feature_list1, feature_list2, decimation_factor, m
 
 
 def prepare_decimated_single_feature_list(feature_list1, feature_list2, decimation_factor):
+    """
+    Prepares signle array of feature lists.
+    """
     feature_list = list()
     feature_list.append(decimate_histogram(feature_list1[0], decimation_factor))
     feature_list.append(decimate_histogram(feature_list1[1], decimation_factor))
@@ -204,12 +202,26 @@ def prepare_decimated_single_feature_list(feature_list1, feature_list2, decimati
     return feature_list
 
 
-def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config, mics_center1, mics_center2, max_r=0.25): # TODO - clean this parameter mess
+def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config): # TODO - clean this parameter mess
+    """
+    Predicates whether estimated source is close enough to the real one. [Needs to be rearranged]
+    :param angles1:
+    :param angles2:
+    :param angle_indexes:
+    :param config:
+    :return: matching verdict [bool]
+    """
+    max_r = config.max_r
+    mics_center1 = config.mic_arr_center1
+    mics_center2 = config.mic_arr_center2
+
     estimation1 = find_intersections([angles1[angle_indexes[0][0]]], [angles2[angle_indexes[0][1]]], mics_center1, mics_center2)
     estimation2 = find_intersections([angles1[angle_indexes[1][0]]], [angles2[angle_indexes[1][1]]], mics_center1, mics_center2)
 
     log.DBG("estimated location 1: ", estimation1[0])
     log.DBG("estimated location 2: ", estimation2[0])
+    log.DBG("real locations: ", config.source_location1)
+    log.DBG("real locations: ", config.source_location2)
 
     # estimation1[0] because finding intersections returns list of pairs(two element lists)
     if is_estimation_close_enough(estimation1[0], config.source_location1, max_r) or is_estimation_close_enough(estimation1[0], config.source_location2, max_r):    # TODO - replace these crappy ifs
@@ -220,7 +232,12 @@ def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config,
 
 
 def pearsons_correlation(hist1, hist2):
-
+    """
+    Indicates relationships between two histograms.
+    :param hist1: list
+    :param hist2: list
+    :return: D factor
+    """
     cov_h1_h2 = np.cov(hist1, hist2)[0][1]
     std_h1 = np.std(hist1)
     std_h2 = np.std(hist2)

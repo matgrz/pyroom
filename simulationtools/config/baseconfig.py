@@ -14,27 +14,15 @@ class BaseConfig:
         self.nsamples = 2048
         self.frame_length = 50
         self.L = range(500, 1010, 10)
-        # self.mic_location1 = np.c_[
-        #     [1.00, 4.01, 1.5],  # mic1
-        #     [1.00, 3.99, 1.5],  # mic2
-        #     [1.02, 4.01, 1.5],  # mic3
-        #     [1.02, 3.99, 1.5],  # mic4
-        # ]
-        # self.mic_location2 = np.c_[
-        #     [4.01, 1.52, 1.5],  # mic1
-        #     [4.01, 1.50, 1.5],  # mic2
-        #     [3.99, 1.50, 1.5],  # mic3
-        #     [3.99, 1.52, 1.5],  # mic4
-        # ]
 
         # mics array
-        self.source_center1 = [1.01, 4.0, 1.5]
-        self.source_center2 = [4.0, 1.51, 1.5]
+        self.mic_arr_center1 = [1.01, 4.0, 1.5]
+        self.mic_arr_center2 = [4.0, 1.51, 1.5]
         self.mics_no = 4
         self.mics_phi = np.pi / 4
         self.r = 0.01414
-        self.mic_location1 = pr.create_circular_mic_array(self.source_center1, self.mics_no, self.mics_phi, self.r)
-        self.mic_location2 = pr.create_circular_mic_array(self.source_center2, self.mics_no, self.mics_phi, self.r)
+        self.mic_location1 = pr.create_circular_mic_array(self.mic_arr_center1, self.mics_no, self.mics_phi, self.r)
+        self.mic_location2 = pr.create_circular_mic_array(self.mic_arr_center2, self.mics_no, self.mics_phi, self.r)
 
         # sources
         self.source_location1 = [2.6, 5.7, 1.8]
@@ -55,10 +43,23 @@ class BaseConfig:
         self. plot_spectrogram2 = 0
         self. write_mic_signal = 0
 
-        # restult plotting
+        # fixed params
+        self.frame_limit = 10
+        self.history_length = 10
+        self.threshold = 0.3
         self.plot_intersections = 0
         self.calculate_features = 1
         self.plot_histograms = 0
+        self.max_r = 0.5
+
+    def fill_fixed_params(self, data):
+        self.frame_limit = data[0]
+        self.history_length = data[1]
+        self.threshold = data[2]
+        self.plot_intersections = data[3]
+        self.calculate_features = data[4]
+        self.plot_histograms = data[5]
+        self.max_r = data[6]
 
 
 class UniversalConfig(BaseConfig):
