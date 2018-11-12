@@ -42,7 +42,7 @@ for config, index in zip(configs, range(len(configs))):
                     test_score += 1
 
                 if config.plot_histograms:
-                    plotting.plot_histograms(all_feature_lists1[frame_index], all_feature_lists2[frame_index], config.decimation_factor, matched_indexes)
+                    plotting.plot_histograms(all_feature_lists1[frame_index], all_feature_lists2[frame_index], config.decimation_factor, matched_indexes1212)
     except:
         log.ERR("unexpected error for cfg number " + str(index))
 

@@ -14,10 +14,10 @@ def plot_crossings(found_crossings, real_sources, room_dimensions, mics_location
 
     fig = plt.figure("Crossings visualization")
     ax = fig.add_subplot(1, 1, 1)
-    ax.scatter(x_val, y_val, marker="o", s=200, label="szacowane lokalizacje")
+    ax.scatter(x_val, y_val, marker="o", s=200, label="szacowane położenia źródeł")
     ax.add_patch(Rectangle((0., 0.), room_dimensions[0], room_dimensions[1], fill=None, alpha=1))
 
-    ax.scatter(real_sources[0][0], real_sources[0][1], marker="x", s=300, c="orange", label="rzeczywiste lokalizacje")
+    ax.scatter(real_sources[0][0], real_sources[0][1], marker="x", s=300, c="orange", label="rzeczywiste położenia źródeł")
     ax.scatter(real_sources[1][0], real_sources[1][1], marker="x", s=300, c="orange")
 
     # for mic in mi?cs_locations:
@@ -26,7 +26,7 @@ def plot_crossings(found_crossings, real_sources, room_dimensions, mics_location
 
     plt.xlabel("oś x [m]")
     plt.ylabel("oś y [m]")
-    # plt.legend(loc="upper left", bbox_to_anchor=(0.05, 0.95))
+    plt.legend(loc="upper left", bbox_to_anchor=(0.05, 0.95))
     plt.show()
 
 
@@ -42,10 +42,10 @@ def plot_histograms(all_feature_lists1, all_feature_lists2, decimation_factor, m
     for features in feature_list:
         plt.subplot(2, 2, plot_index+1)
         if plot_index == paint_red[0] or plot_index == paint_red[1]:
-            plt.bar(range(len(features)), list(features), align='center', color="red")
+            plt.bar(range(len(features)), list(features), align='center', color="green")
         else:
             plt.bar(range(len(features)), list(features), align='center')
-        plt.xticks(range(0, len(features), 2), range(0, len(features), 2))
+        plt.xticks(range(0, len(features), 4), range(0, len(features), 4))
         plt.xlabel("indeks częstotliwości")
         plt.ylabel("liczebność dopasowań")
         plt.ylim(top=1.1*max_val)

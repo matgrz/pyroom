@@ -149,19 +149,25 @@ class RoomWrapper:
         self.voice_sample_male = voice_sample_male[40000:160000]
 
     def process_signals(self, rooms_mic_array):
-        mic0_processed_signal = processing.convert_float_signal_to_int(rooms_mic_array.signals[0, :])
-        mic1_processed_signal = processing.convert_float_signal_to_int(rooms_mic_array.signals[1, :])
-        mic2_processed_signal = processing.convert_float_signal_to_int(rooms_mic_array.signals[2, :])
-        mic3_processed_signal = processing.convert_float_signal_to_int(rooms_mic_array.signals[3, :])
+        mic_processed_signals = []
 
-        return [mic0_processed_signal, mic1_processed_signal, mic2_processed_signal, mic3_processed_signal]
+        for mic_index in range(np.shape(rooms_mic_array.signals)[0]):
+            mic_processed_signals.append(processing.convert_float_signal_to_int(rooms_mic_array.signals[mic_index, :]))
+
+        return mic_processed_signals
 
     def calculate_stft(self, processed_signals_array):
+        """
+        Calculates stft for every microphone in the array. Vstack adds another dimension which represents
+        microphone count.
+        :param processed_signals_array: array with processed microphone signals
+        :return: output of single stft as two vectors: f and t, inpud DOA signal
+        """
+        stft_signals = []
+        f_list, t_list = [], []
+        for stft_index in range(np.shape(processed_signals_array)[0]):
+            f_list, t_list, temp_sig = signal.stft(processed_signals_array[stft_index], fs=self.config.fs,
+                                                   nperseg=self.config.nsamples)
+            stft_signals.append(temp_sig[np.newaxis, :])
 
-        f1, t1, stft_signal1 = signal.stft(processed_signals_array[0], fs=self.config.fs, nperseg=self.config.nsamples)
-        _, _, stft_signal2 = signal.stft(processed_signals_array[1], fs=self.config.fs, nperseg=self.config.nsamples)
-        _, _, stft_signal3 = signal.stft(processed_signals_array[2], fs=self.config.fs, nperseg=self.config.nsamples)
-        _, _, stft_signal4 = signal.stft(processed_signals_array[3], fs=self.config.fs, nperseg=self.config.nsamples)
-
-        return f1, t1, np.vstack([stft_signal1[np.newaxis, :], stft_signal2[np.newaxis, :],
-                                  stft_signal3[np.newaxis, :], stft_signal4[np.newaxis, :]])
+        return f_list, t_list, np.vstack(stft_signals)

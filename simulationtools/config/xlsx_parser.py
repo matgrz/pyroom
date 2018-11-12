@@ -47,5 +47,6 @@ def parse_fixed_params(sheet):
     :return: list of formatted data
     """
     fixed_params = sheet.row_values(1)
+    log.DBG("parsed fixed params: ", fixed_params)
     return [int(fixed_params[1]), int(fixed_params[2]), float(fixed_params[3]), bool(fixed_params[4]),
             bool(fixed_params[5]), bool(fixed_params[6]), float(fixed_params[7])]
