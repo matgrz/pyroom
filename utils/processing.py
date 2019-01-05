@@ -202,7 +202,7 @@ def prepare_decimated_single_feature_list(feature_list1, feature_list2, decimati
     return feature_list
 
 
-def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config): # TODO - clean this parameter mess
+def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config):  # TODO - clean this parameter mess
     """
     Predicates whether estimated source is close enough to the real one. [Needs to be rearranged]
     :param angles1:
@@ -224,8 +224,10 @@ def match_estimations_with_real_sources(angles1, angles2, angle_indexes, config)
     log.DBG("real locations: ", config.source_location2)
 
     # estimation1[0] because finding intersections returns list of pairs(two element lists)
-    if is_estimation_close_enough(estimation1[0], config.source_location1, max_r) or is_estimation_close_enough(estimation1[0], config.source_location2, max_r):    # TODO - replace these crappy ifs
-        if is_estimation_close_enough(estimation2[0], config.source_location1, max_r) or is_estimation_close_enough(estimation2[0], config.source_location2, max_r):
+    if is_estimation_close_enough(estimation1[0], config.source_location1, max_r) or \
+            is_estimation_close_enough(estimation1[0], config.source_location2, max_r):    # TODO - replace these crappy ifs
+        if is_estimation_close_enough(estimation2[0], config.source_location1, max_r) or \
+                is_estimation_close_enough(estimation2[0], config.source_location2, max_r):
             return True
 
     return False

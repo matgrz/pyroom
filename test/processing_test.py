@@ -13,9 +13,15 @@ mic_center1 = [0, 4]
 mic_center2 = [4, 0]
 expected_result = [[0.0, 4.0], [float('Inf'), None], [None, float('Inf')], [0.0, 0.0]]
 
+# test_intersection_of_two_angles
 single_angle1 = [350]
 single_angle2 = [100]
 result_single_angle = [[3.4, 3.4]]
+
+# test_two_intersections_inside_two_outside variables
+angles_inside1 = [300, 355]
+angles_inside2 = [170, 105]
+expected_locations_inside = [[2.12, 0.33], [5.46, -5.46], [-37.09, 7.24], [3.0, 3.74]]
 
 # test_angular_distance_calculation variables
 angle1 = 30
@@ -54,15 +60,19 @@ expect_arr = np.c_[
 
 class ProcessingTest(unittest.TestCase):
     def test_given_mics_and_sources_in_the_corners(self):
-        array_of_positions = processing.find_intersections(angle_array1, angle_array2, mic_center1,
-                                                           mic_center2)
-        log.INFO("array position: ", array_of_positions)
-        self.assertTrue(expected_result == array_of_positions, "Positions not equal")
+
+        array_of_positions = processing.find_intersections(angle_array1, angle_array2, mic_center1, mic_center2)
+        self.assertEqual(expected_result, array_of_positions, "Positions not equal")
 
     def test_intersection_of_two_angles(self):
+
         position = processing.find_intersections(single_angle1, single_angle2, mic_center1, mic_center2)
-        log.INFO("array position: ", position)
-        self.assertTrue(position == result_single_angle, "Positions not equal")
+        self.assertEqual(position, result_single_angle, "Positions not equal")
+
+    def test_two_intersections_inside_two_outside(self):
+
+        array_of_positions = processing.find_intersections(angles_inside1, angles_inside2, mic_center1, mic_center2)
+        self.assertEqual(array_of_positions, expected_locations_inside, "Positions not equal")
 
     def test_angular_distance_calculation(self):
         self.assertAlmostEqual(processing.calculate_angular_distance(angle1, angle2), result)

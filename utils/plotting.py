@@ -26,7 +26,7 @@ def plot_crossings(found_crossings, real_sources, room_dimensions, mics_location
 
     plt.xlabel("oś x [m]")
     plt.ylabel("oś y [m]")
-    plt.legend(loc="upper left", bbox_to_anchor=(0.05, 0.95))
+    # plt.legend(loc="upper left", bbox_to_anchor=(0.05, 0.95))
     plt.show()
 
 

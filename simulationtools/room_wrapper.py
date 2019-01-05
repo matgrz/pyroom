@@ -79,8 +79,8 @@ class RoomWrapper:
             # log.DBG("frame_no = ", frame_no)
             fi = dict.fromkeys(self.config.L)        # create dict with keys for every l
 
-            for l in self.config.L:
-                fi[l] = doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + 1)], l)     # TODO find different way to calculate DOA for single freq - this one is very time consuming
+            for l in self.config.L:   # TODO find different way to calculate DOA for single freq - this one is very time consuming
+                fi[l] = doa_module.calculate_narrowband_doa(input_doa_signal[:, :, frame_no:(frame_no + 1)], l)
 
             list_of_frames_dicts.append([frame_no, fi])
             # log.DBG("fi value: ", fi)
@@ -91,7 +91,7 @@ class RoomWrapper:
 
         all_feature_lists = list()
         for frame_index in range(history_length - 1, frames_count, history_length):
-            feature_list1 = {}.fromkeys(self.config.L, 0)  # [freq, value] - value means how many times freq was asociated
+            feature_list1 = {}.fromkeys(self.config.L, 0)  # [freq, value]-value means how many times freq was associated
             feature_list2 = {}.fromkeys(self.config.L, 0)
             for tou_prim in range(frame_index - history_length, frame_index):
                 for l in self.config.L:

@@ -16,7 +16,7 @@ class BaseConfig:
         self.L = range(500, 1010, 10)
 
         # mics array
-        self.mic_arr_center1 = [1.01, 4.0, 1.5]
+        self.mic_arr_center1 = [1.01, 4.0, 1.5]  # TODO: parse it from xlsx config file
         self.mic_arr_center2 = [4.0, 1.51, 1.5]
         self.mics_no = 4
         self.mics_phi = np.pi / 4
@@ -51,6 +51,10 @@ class BaseConfig:
         self.calculate_features = 1
         self.plot_histograms = 0
         self.max_r = 0.5
+
+        # third array feature
+        self.source_center3 = [5.0, 6.0, 1.5]
+        self.mic_location3 = pr.create_circular_mic_array(self.source_center3, self.mics_no, self.mics_phi, self.r)
 
     def fill_fixed_params(self, data):
         self.frame_limit = data[0]
